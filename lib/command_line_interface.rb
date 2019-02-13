@@ -5,6 +5,7 @@ class Game
   def initialize
     @trainer = nil
     @enemy = nil
+    @prompt = TTY::Prompt.new
     start
   end
 
@@ -28,17 +29,17 @@ class Game
 
     sleep 3
     system "clear"
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts "            Please enter your name: "
+    # puts " "
+    # puts " "
+    # puts " "
+    # puts " "
+    # puts " "
+    # puts " "
+    # puts "            Please enter your name: "
   end
 
   def get_user_name
-    input = gets.chomp.capitalize
+    input = @prompt.ask('What is your name?').capitalize
     @trainer = Trainer.find_or_create_by(name: input)
     puts "  ..."
     system "clear"
@@ -63,12 +64,13 @@ class Game
   end
 
   def fighting_sequence
-    battle_platform
+    # battle_platform
+    battle_display
     get_attack
     continue?
     winner_or_loser?
   end
-
+#
   def winner_or_loser?
     if @enemy.hp <= 0
       system "clear"
@@ -107,7 +109,7 @@ class Game
 
   def continue?
     until @trainer.pokemon.hp <= 0 || @enemy.hp <= 0
-      battle_platform
+      battle_display
       get_attack
     end
   end
@@ -121,24 +123,15 @@ class Game
     puts " "
     puts " "
     puts " "
-    puts "P l e a s e   s t a t e   w h i c h   f i r s t - g e n   p o k e m o n"
-    puts "y o u ' d   l i k e   t o   b e   p a r t n e r e d   w i t h ..."
-    pokemon_choice = gets.chomp.capitalize
+    pokelist = Pokemon.all.map {|poke| poke.name}
+    pokemon_choice = @prompt.select("           C h o o s e   y o u r   p o k e m o n", pokelist, filter: true)
     pokemon = Pokemon.find_by(name: pokemon_choice)
-
-    while pokemon == nil
-      get_pokemon_name
-      return
-    end
-
     @trainer.pokemon = pokemon
-
     system "clear"
     puts " "
     puts "  ...hmm, #{@trainer.pokemon.name}."
     sleep 2
     system "clear"
-
     puts "You know what #{@trainer.name}?!"
     puts "#{@trainer.pokemon.name} is a marvellous choice!"
     puts "You two will be an awesome team!"
@@ -243,9 +236,9 @@ class Game
   end
 
   def get_attack
-    input = gets.chomp
-
-      if input == "a"
+    move_arr = ["n o r m a l   a t t a c k", "s p e c i a l   a t t a c k", "d e f e n s e   i n c r e a s e"]
+    input = @prompt.select("c h o o s e   a   m a n e u v r e", move_arr, filter: true)
+      if input == move_arr[0]
         move = (@trainer.pokemon.attack/3) + rand(20..70) - @enemy.defense/2
         retaliation = (enemy.attack/3) + rand(20..60) - @trainer.pokemon.defense/2
         if move > 0
@@ -272,7 +265,7 @@ class Game
         sleep 2.5
       end
 
-      if input  == "s"
+      if input == move_arr[1]
         move = (@trainer.pokemon.attack/3) + rand(20..50) - @enemy.defense/2
         @trainer.pokemon.hp += rand(5..35)
         retaliation = (enemy.attack/3) + rand(20..60) - @trainer.pokemon.defense/2
@@ -300,7 +293,7 @@ class Game
         sleep 2.5
       end
 
-      if input == "d"
+      if input == move_arr[2]
         move = 0
         trainer.pokemon.defense += rand(5..20)
         retaliation = (enemy.attack/3) + rand(20..50) - @trainer.pokemon.defense/1.5
@@ -324,4 +317,19 @@ class Game
       end
   end
 
+  def battle_display
+    system "clear"
+    puts "E N E M Y - Wild Pokemon"
+    puts "#{@enemy.name} HP:#{@enemy.hp}"
+    puts "A T T A C K - #{@enemy.attack}"
+    puts "D E F E N S E - #{@enemy.defense}"
+    puts "--------------------------------------------"
+    puts "T R A I N E R - #{@trainer.name}"
+    puts "#{@trainer.pokemon.name}   HP:#{@trainer.pokemon.hp}"
+    puts "A T T A C K - #{@trainer.pokemon.attack} "
+    puts "D E F E N S E - #{@trainer.pokemon.defense} "
+    puts "--------------------------------------------"
+    # move_arr = ["n o r m a l   a t t a c k", "s p e c i a l   a t t a c k", "d e f e n s e   i n c r e a s e"]
+    # @prompt.select("c h o o s e   a   m a n e u v r e", move_arr, filter: true)
+  end
 end
