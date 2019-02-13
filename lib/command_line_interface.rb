@@ -2,6 +2,25 @@ class Game
 
   attr_reader :trainer, :enemy
 
+  # @audio_files = {
+  #   opening: "./audio/opening.mp3"
+  # }
+  #
+  # def play_sound(key)
+  #   require "audio-playback"
+  #
+  #   # Prompt the user to select an audio output
+  #   @output = AudioPlayback::Device::Output.gets
+  #
+  #   options = {
+  #     :channels => [0,1],
+  #     :latency => 1,
+  #     :output_device => @output
+  #   }
+  #
+  #   @playback = AudioPlayback.play(@audio_files[key], options)
+  # end
+
   def initialize
     @trainer = nil
     @enemy = nil
@@ -9,46 +28,48 @@ class Game
     start
   end
 
+  def insert_spaces(n)
+    n.times { puts " \n" }
+  end
+
+  def pad_half_screen
+    spaces = IO.console.winsize[0] / 2
+    insert_spaces(spaces)
+  end
+
+  def centered_text(text)
+    width = IO.console.winsize[1] / 2
+    pad_half_screen
+    puts "#{" " * (width - (text.length / 2))}#{text}"
+    pad_half_screen
+  end
+
   def welcome
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts "            W E L C O M E  T O "
+    centered_text "W E L C O M E  T O "
     sleep 3
     system "clear"
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts "            T H E  P O K E M O N - B A T T L E - S I M U L A T O R "
+    centered_text "T H E  P O K E M O N - B A T T L E - S I M U L A T O R "
 
     sleep 3
     system "clear"
-    # puts " "
-    # puts " "
-    # puts " "
-    # puts " "
-    # puts " "
-    # puts " "
-    # puts "            Please enter your name: "
   end
 
   def get_user_name
-    input = @prompt.ask('What is your name?').capitalize
+    centered_text "What is your name?"
+    input = @prompt.ask('> ').capitalize
     @trainer = Trainer.find_or_create_by(name: input)
     puts "  ..."
     system "clear"
     sleep 0.5
-    puts "Welcome #{input}!"
+    centered_text "Welcome #{input}!"
     sleep 2
   end
 
   def start
+    # play_sound
+    system "clear"
+    centered_text "Press space or enter to continue"
+    @prompt.keypress("> ", keys: [:space, :return])
     system "clear"
     welcome
     get_user_name
@@ -58,9 +79,6 @@ class Game
     system "clear"
     fighting_sequence
     sleep 4
-
-    # puts "                         type exit"
-    # gets.chomp
   end
 
   def fighting_sequence
@@ -74,35 +92,11 @@ class Game
   def winner_or_loser?
     if @enemy.hp <= 0
       system "clear"
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts "            Y O U  A R E  T H E  C H A M P I O N            "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
+      centered_text "Y O U  A R E  T H E  C H A M P I O N"
     end
     if @trainer.pokemon.hp <= 0
       system "clear"
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts "            U N L U C K Y  C H A M P,  B E T T E R  L U C K  N E X T  T I M E            "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
+      centered_text "U N L U C K Y  C H A M P,  B E T T E R  L U C K  N E X T  T I M E"
     end
   end
 
@@ -117,21 +111,16 @@ class Game
   def get_pokemon_name
     system "clear"
     sleep 0.5
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
     pokelist = Pokemon.all.map {|poke| poke.name}
-    pokemon_choice = @prompt.select("           C h o o s e   y o u r   p o k e m o n", pokelist, filter: true)
+    centered_text "C h o o s e   y o u r   p o k e m o n"
+    pokemon_choice = @prompt.select("> ", pokelist, filter: true)
     pokemon = Pokemon.find_by(name: pokemon_choice)
     @trainer.pokemon = pokemon
     system "clear"
-    puts " "
-    puts "  ...hmm, #{@trainer.pokemon.name}."
+    centered_text "  ...hmm, #{@trainer.pokemon.name}."
     sleep 2
     system "clear"
+    pad_half_screen
     puts "You know what #{@trainer.name}?!"
     puts "#{@trainer.pokemon.name} is a marvellous choice!"
     puts "You two will be an awesome team!"
@@ -140,49 +129,19 @@ class Game
 
   def ready_to_fight?
     system "clear"
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts "R e a d y ?  h i t  y / n"
+    centered_text "R e a d y ?  h i t  y / n"
     if gets.chomp.downcase == "y"
       system "clear"
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts "3"
+      centered_text "3"
       sleep 1.3
       system "clear"
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts "2"
+      centered_text "2"
       sleep 1.3
       system "clear"
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts "1"
+      centered_text "1"
       sleep 1.3
       system "clear"
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts " "
-      puts "Here we go #{@trainer.pokemon.name}, let's keep our eyes peeled."
+      centered_text "Here we go #{@trainer.pokemon.name}, let's keep our eyes peeled."
       sleep 3
     else
       system "exit"
@@ -192,47 +151,11 @@ class Game
   def create_enemy
     @enemy = Pokemon.find_by(id: rand(1..Pokemon.all.length))
     system "clear"
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " What's that!? It's a wild #{@enemy.name}!!!"
+    centered_text " What's that!? It's a wild #{@enemy.name}!!!"
     sleep 3
     system "clear"
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts " "
-    puts "P r e p a r e   T o   F i g h t!"
+    centered_text "P r e p a r e   T o   F i g h t!"
     sleep 2
-  end
-
-
-  def battle_platform
-    system "clear"
-    puts "E N E M Y - Wild Pokemon"
-    puts "#{@enemy.name} HP:#{@enemy.hp}"
-    puts "A T T A C K - #{@enemy.attack}"
-    puts "D E F E N S E - #{@enemy.defense}"
-    puts " "
-    puts " "
-    puts " "
-    puts "press a - n o r m a l   a t t a c k"
-    puts " "
-    puts "press s - s p e c i a l   a t t a c k"
-    puts " "
-    puts "press d - d e f e n s e   i n c r e a s e"
-    puts " "
-    puts " "
-    puts " "
-    puts "T R A I N E R - #{@trainer.name}"
-    puts "#{@trainer.pokemon.name}   HP:#{@trainer.pokemon.hp}"
-    puts "A T T A C K - #{@trainer.pokemon.attack} "
-    puts "D E F E N S E - #{@trainer.pokemon.defense} "
   end
 
   def get_attack
@@ -254,12 +177,7 @@ class Game
         system "clear"
         puts "#{@trainer.name}'s #{@trainer.pokemon.name} hit for #{move}."
         puts "#{@enemy.name} HP: #{@enemy.hp}"
-        puts " "
-        puts " "
-        puts " "
-        puts " "
-        puts " "
-        puts " "
+        pad_half_screen
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
         sleep 2.5
@@ -282,12 +200,7 @@ class Game
         system "clear"
         puts "#{@trainer.name}'s #{@trainer.pokemon.name} hit for #{move}."
         puts "#{@enemy.name} HP: #{@enemy.hp}"
-        puts " "
-        puts " "
-        puts " "
-        puts " "
-        puts " "
-        puts " "
+        pad_half_screen
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
         sleep 2.5
@@ -305,12 +218,7 @@ class Game
         system "clear"
         puts "#{@trainer.name}'s #{@trainer.pokemon.name} hit for #{move}."
         puts "#{@enemy.name} HP: #{@enemy.hp}"
-        puts " "
-        puts " "
-        puts " "
-        puts " "
-        puts " "
-        puts " "
+        pad_half_screen
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
         sleep 4
