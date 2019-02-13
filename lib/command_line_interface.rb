@@ -32,8 +32,10 @@ class Game
     create_enemy
     system "clear"
     fighting_sequence
+    sleep 4
+
+    puts "                         type exit"
     gets.chomp
-    binding.pry
   end
 
   def fighting_sequence
@@ -118,12 +120,16 @@ class Game
     puts "Ready?"
     puts "    y/n"
     if gets.chomp.downcase == "y"
+      system "clear"
+      puts " "
+      puts " "
+      puts " "
       puts "...3"
-      sleep 1.5
+      sleep 1
       puts "..2"
-      sleep 1.5
-      puts ".1"
-      sleep 1.5
+      sleep 1
+      puts "1"
+      sleep 1
       puts " "
       puts "Here we go #{@trainer.pokemon.name}, let's keep our eyes peeled."
       sleep 2
@@ -173,8 +179,8 @@ class Game
     input = gets.chomp
 
       if input == "a"
-        move = (@trainer.pokemon.attack/2) + rand(20..60) - @enemy.defense
-        retaliation = (enemy.attack/2) + rand(20..50) - @trainer.pokemon.defense
+        move = (@trainer.pokemon.attack/3) + rand(20..120) - @enemy.defense/2
+        retaliation = (enemy.attack/3) + rand(20..100) - @trainer.pokemon.defense/2
         if move > 0
           @enemy.hp -= move
         else
@@ -196,13 +202,13 @@ class Game
         puts " "
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
-        sleep 5
+        sleep 4
       end
 
       if input  == "s"
-        move = (@trainer.pokemon.attack/2) + rand(20..40) - @enemy.defense
-        @trainer.pokemon.hp += rand(5..10)
-        retaliation = (enemy.attack/2) + rand(20..50) - @trainer.pokemon.defense
+        move = (@trainer.pokemon.attack/3) + rand(20..100) - @enemy.defense/2
+        @trainer.pokemon.hp += rand(5..35)
+        retaliation = (enemy.attack/3) + rand(40..100) - @trainer.pokemon.defense/2
         if retaliation > 0
           @trainer.pokemon.hp -= retaliation
         else
@@ -224,13 +230,13 @@ class Game
         puts " "
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
-        sleep 5
+        sleep 4
       end
 
       if input == "d"
         move = 0
-        trainer.pokemon.defense += rand(1..6)
-        retaliation = (enemy.attack/2) + rand(20..50) - @trainer.pokemon.defense
+        trainer.pokemon.defense += rand(5..20)
+        retaliation = (enemy.attack/3) + rand(40..100) - @trainer.pokemon.defense/2
         if retaliation > 0
           @trainer.pokemon.hp -= retaliation
         else
@@ -247,7 +253,7 @@ class Game
         puts " "
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
-        sleep 5
+        sleep 4
       end
   end
 
