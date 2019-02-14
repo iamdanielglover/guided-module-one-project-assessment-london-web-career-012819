@@ -2,7 +2,13 @@ require_relative '../config/environment'
 # require_relative "../lib/pokapi_communicator.rb"
 require_relative "../lib/command_line_interface.rb"
 
-Game.new
+game = Game.new
+Battle.create(trainer_id: game.trainer.id, pokemon_id: game.trainer.pokemon.id, pokemon_enemy: game.enemy.id)
+
+t.integer :trainer_id
+t.integer :pokemon_id
+t.boolean :status
+t.integer :round_count
 # while true
 #   character = get_character_from_user
 #   if character == "exit"
