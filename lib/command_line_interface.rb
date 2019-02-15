@@ -1,30 +1,13 @@
 class Game
 
-  attr_reader :trainer, :enemy
-
-  # @audio_files = {
-  #   opening: "./audio/opening.mp3"
-  # }
-  #
-  # def play_sound(key)
-  #   require "audio-playback"
-  #
-  #   # Prompt the user to select an audio output
-  #   @output = AudioPlayback::Device::Output.gets
-  #
-  #   options = {
-  #     :channels => [0,1],
-  #     :latency => 1,
-  #     :output_device => @output
-  #   }
-  #
-  #   @playback = AudioPlayback.play(@audio_files[key], options)
-  # end
+  attr_reader :trainer, :enemy, :rounds
 
   def initialize
     @trainer = nil
     @enemy = nil
     @prompt = TTY::Prompt.new
+    @rounds = 1
+
     start
   end
 
@@ -44,46 +27,26 @@ class Game
     pad_half_screen
   end
 
-  def welcome
-    centered_text "W E L C O M E  T O "
-    sleep 3
+  def prompt_enter
+    centered_text "P r e s s   e n t e r   t o   c o n t i n u e"
+    @prompt.keypress("> ", keys: [:return])
     system "clear"
-    centered_text "T H E  P O K E M O N - B A T T L E - S I M U L A T O R "
-
-    sleep 3
-    system "clear"
-  end
-
-  def get_user_name
-    centered_text "W h a t   i s   y o u r   n a m e ?"
-    input = @prompt.ask('> ').capitalize
-    @trainer = Trainer.find_or_create_by(name: input)
-    puts "  ..."
-    system "clear"
-    sleep 0.5
-    centered_text "Welcome #{input}!"
-    sleep 2
   end
 
   def start
     # play_sound
     system "clear"
-    centered_text "P r e s s   e n t e r   t o   c o n t in u e"
-    @prompt.keypress("> ", keys: [:return])
-    system "clear"
+    prompt_enter
     welcome
     get_user_name
     get_pokemon_name
-    # ready_to_fight?
-    # create_enemy
-    # system "clear"
-    # fighting_sequence
     fight_segment
-
-    sleep 4
+    Battle.create(trainer_id: self.trainer.id, pokemon_id: self.trainer.pokemon.id, round_count: self.rounds)
+    score_table
   end
 
   def fight_segment
+    display_round
     ready_to_fight?
     create_enemy
     system "clear"
@@ -91,37 +54,64 @@ class Game
   end
 
   def fighting_sequence
-    # battle_platform
     battle_display
     get_attack
     continue?
     winner_or_loser?
   end
-#
+
+  def welcome
+    centered_text "W E L C O M E   T O "
+    sleep 2
+    system "clear"
+    centered_text "T H E   P O K E M O N - B A T T L E - S I M U L A T O R "
+    sleep 2
+    system "clear"
+  end
+
+  def get_user_name
+    centered_text "W h a t   i s   y o u r   n a m e ?"
+    input = @prompt.ask('> ', required: true).capitalize
+    stylized_input = input.split("").join(" ")
+    @trainer = Trainer.find_or_create_by(name: input)
+    puts "  ..."
+    system "clear"
+    sleep 0.5
+    centered_text "W e l c o m e   #{stylized_input}!"
+    sleep 2
+  end
+
   def winner_or_loser?
-    if @enemy.hp <= 0
+    if @enemy.hp <= 0 && @trainer.pokemon.hp > 0
       system "clear"
-      centered_text "Y O U  A R E  T H E  C H A M P I O N"
+      centered_text "N I C E  O N E  C H A M P !"
+      sleep 2
+      @rounds += 1
       fight_segment
     end
     if @trainer.pokemon.hp <= 0
       system "clear"
-      centered_text "U N L U C K Y  C H A M P,  B E T T E R  L U C K  N E X T  T I M E"
+      centered_text "T H A T  W A S N ' T  A  B A D  R U N  A T  A L L!"
+      sleep 2
+      system "clear"
     end
+  end
+
+  def display_round
+      centered_text "R O U N D  #{@rounds}"
+      sleep 2
   end
 
 
   def continue?
     until @trainer.pokemon.hp <= 0 || @enemy.hp <= 0
       battle_display
-      get_attackdan
-
+      get_attack
     end
   end
 
   def get_pokemon_name
     system "clear"
-    sleep 0.5
     pokelist = Pokemon.all.map {|poke| poke.name}
     centered_text "C h o o s e   y o u r   p o k e m o n"
     pokemon_choice = @prompt.select("> ", pokelist, filter: true)
@@ -137,8 +127,10 @@ class Game
     centered_text "#{@trainer.pokemon.name} is a marvellous choice!"
     sleep 2
     system "clear"
-    centered_text "You two will be an awesome team!"
-    sleep 3
+    centered_text "The two of you will be an awesome team!"
+    sleep 2
+    centered_text "Here we go #{@trainer.pokemon.name}, let's keep our eyes peeled."
+    sleep 2
   end
 
   def ready_to_fight?
@@ -147,23 +139,22 @@ class Game
     @prompt.keypress("> ", keys: [:return])
       system "clear"
       centered_text "3"
-      sleep 1.3
+      sleep 1
       system "clear"
       centered_text "2"
-      sleep 1.3
+      sleep 1
       system "clear"
       centered_text "1"
-      sleep 1.3
+      sleep 1
       system "clear"
-      centered_text "Here we go #{@trainer.pokemon.name}, let's keep our eyes peeled."
-      sleep 3
   end
 
   def create_enemy
     @enemy = Pokemon.find_by(id: rand(1..Pokemon.all.length))
+    name = @enemy.name
     system "clear"
-    centered_text " What's that!? It's a wild #{@enemy.name}!!!"
-    sleep 3
+    centered_text "I t ' s   a   w i l d   #{name.split("").join(" ")} ! ! !"
+    sleep 2
     system "clear"
     centered_text "P r e p a r e   T o   F i g h t!"
     sleep 2
@@ -171,18 +162,24 @@ class Game
 
 
   def get_attack
-    move_arr = ["n o r m a l   a t t a c k", "s p e c i a l   a t t a c k", "d e f e n s e   i n c r e a s e"]
+    move_arr = ["f u l l   a t t a c k", "h e a l   a t t a c k", "d e f e n s e   i n c r e a s e"]
     input = @prompt.select("c h o o s e   a   m a n e u v r e", move_arr, filter: true)
       if input == move_arr[0]
-        move = (@trainer.pokemon.attack/3) + rand(20..70) - @enemy.defense/2
-        retaliation = (enemy.attack/3) + rand(20..60) - @trainer.pokemon.defense/2
+        move = (@trainer.pokemon.attack/10) + rand(5..25) - @enemy.defense/9
+        retaliation = (enemy.attack/10) + rand(5..25) - @trainer.pokemon.defense/9
         if move > 0
           @enemy.hp -= move
+          if @enemy.hp < 0
+            @enemy.hp = 0
+          end
         else
           move = 0
         end
         if retaliation > 0
           @trainer.pokemon.hp -= retaliation
+          if @trainer.pokemon.hp < 0
+            @trainer.pokemon.hp = 0
+          end
         else
           retaliation = 0
         end
@@ -193,20 +190,26 @@ class Game
         insert_spaces(2)
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
-        sleep 4
+        sleep 3
       end
 
       if input == move_arr[1]
-        move = (@trainer.pokemon.attack/3) + rand(20..50) - @enemy.defense/2
-        @trainer.pokemon.hp += rand(5..35)
-        retaliation = (enemy.attack/3) + rand(20..60) - @trainer.pokemon.defense/2
+        move = (@trainer.pokemon.attack/10) + rand(1..20) - @enemy.defense/9
+        @trainer.pokemon.hp += rand(5..15)
+        retaliation = (enemy.attack/10) + rand(1..25) - @trainer.pokemon.defense/9
         if retaliation > 0
           @trainer.pokemon.hp -= retaliation
+          if @trainer.pokemon.hp < 0
+            @trainer.pokemon.hp = 0
+          end
         else
           retaliation = 0
         end
         if move > 0
           @enemy.hp -= move
+          if @enemy.hp < 0
+            @enemy.hp = 0
+          end
         else
           move = 0
         end
@@ -217,15 +220,18 @@ class Game
         insert_spaces(2)
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
-        sleep 4
+        sleep 3
       end
 
       if input == move_arr[2]
         move = 0
-        trainer.pokemon.defense += rand(5..20)
-        retaliation = (enemy.attack/3) + rand(20..50) - @trainer.pokemon.defense/1.5
+        trainer.pokemon.defense += rand(1..8)
+        retaliation = ((enemy.attack/10) + rand(5..25) - @trainer.pokemon.defense/8).to_i
         if retaliation > 0
-          @trainer.pokemon.hp -= retaliation.round
+          @trainer.pokemon.hp -= retaliation.to_i
+          if @trainer.pokemon.hp < 0
+            @trainer.pokemon.hp = 0
+          end
         else
           retaliation = 0
         end
@@ -236,7 +242,7 @@ class Game
         insert_spaces(2)
         puts "#{@enemy.name} hit for #{retaliation}."
         puts "#{@trainer.name}'s' #{@trainer.pokemon.name} HP: #{@trainer.pokemon.hp}"
-        sleep 4
+        sleep 3
       end
   end
 
@@ -253,7 +259,26 @@ class Game
     puts "A T T A C K - #{@trainer.pokemon.attack} "
     puts "D E F E N S E - #{@trainer.pokemon.defense} "
     puts "----------------------------------"
-    # move_arr = ["n o r m a l   a t t a c k", "s p e c i a l   a t t a c k", "d e f e n s e   i n c r e a s e"]
-    # @prompt.select("c h o o s e   a   m a n e u v r e", move_arr, filter: true)
   end
+
+  def score_table
+    rows = []
+    sorted_battles = Battle.all.sort_by { |bat| bat.round_count  }.reverse
+      sorted_battles.each do |bat|
+        rows << [ bat.trainer.name, bat.pokemon.name, bat.round_count ]
+      end
+
+    table = Terminal::Table.new :title => "Score Table", :headings => ['Trainer', 'Pokemon', 'Round'], :rows => rows
+    puts table
+
+    choices = ["Play again", "Quit"]
+    input = @prompt.select("O P T I O N S", choices, filter: true)
+      if input == choices[0]
+        start
+      end
+      if input == choices[1]
+        system 'exit'
+      end
+  end
+
 end

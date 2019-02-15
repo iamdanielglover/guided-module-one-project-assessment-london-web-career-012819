@@ -9,4 +9,6 @@ gem "faker"
 gem 'json'
 gem 'rest-client'
 gem 'tty-prompt'
+gem 'tty-table'
+gem 'terminal-table'
 # gem "audio-playback"
